@@ -1,5 +1,19 @@
+// MaggieMaker: A Customisable Kitchen Timer
+// Author: Jonathan Tan
+// Jan 2021
+// Written for Seeed Wio Terminal
+
 #include <TFT_eSPI.h>
 #include"Free_Fonts.h"
+
+// EDIT THE FOLLOWING TO DECLARE BUTTON PINS FOR OTHER ARDUINO BOARDS
+const auto clicker_button = WIO_5S_PRESS;
+const auto audio_button = WIO_KEY_C;
+
+// Initialise State Variables
+int alarm_state = 1;
+int clicker_state = 0;
+bool skipped_timer = false;
 
 TFT_eSPI tft;
 TFT_eSprite ttext(&tft);
@@ -12,9 +26,6 @@ TFT_eSprite notes3_text(&tft);
 TFT_eSprite action_text(&tft);
 TFT_eSprite sp(&tft);
 
-int alarm_state = 1;
-int clicker_state = 0;
-bool skipped_timer = false;
 
 void clear_timer() {
     tft.fillRect(0, 200, 400, 40, TFT_BLACK);
@@ -66,7 +77,7 @@ void alarm_logo() {
       sp.pushSprite(300, 5);
 }
 
-void cover(int mode) {
+void cover(int mode, String line1 = "Meet Your", String line2 = "Maggie Maker!") {
     tft.setFreeFont(FSSB18);
     tft.setTextDatum(MC_DATUM);
 
@@ -79,14 +90,14 @@ void cover(int mode) {
         alarm_text.pushSprite(5,5);
         
         // Add Title Text
-        tft.drawString("Meet Your", 160, 100);
-        tft.drawString("Maggie Maker!", 160, 140);
+        tft.drawString(line1, 160, 100);
+        tft.drawString(line2, 160, 140);
         tft.setFreeFont(FSS9);
         tft.drawString("Click to Start", 160, 210);
 
         // Wait for Input and Allow for Alarm Toggle
         while (clicker_state == 0) {
-            if (digitalRead(WIO_KEY_C) == LOW) {
+            if (digitalRead(audio_button) == LOW) {
               if (alarm_state == 1) {
                   alarm_state = 0;
                   tft.fillRect(300, 0, 50, 50, TFT_BLACK);
@@ -97,7 +108,7 @@ void cover(int mode) {
                   delay(500);
               }
             }
-            if (digitalRead(WIO_5S_PRESS) == LOW) {
+            if (digitalRead(clicker_button) == LOW) {
               clicker_state = 1;
               delay(500);
               alarm_text.deleteSprite();
@@ -109,7 +120,7 @@ void cover(int mode) {
         tft.setFreeFont(FSS9);
         tft.drawString("Made by Jonathan Tan", 160, 210);
         while (clicker_state == 0) {
-            if (digitalRead(WIO_5S_PRESS) == LOW) {
+            if (digitalRead(clicker_button) == LOW) {
               clicker_state = 1;
               delay(500);
             }
@@ -167,7 +178,7 @@ void page(int step_no, String title, int duration, String notes1, String notes2 
             action_text.setFreeFont(FSS9);
             action_text.drawString("Start the timer when you're ready.", 0, 0);
             action_text.pushSprite(10,210);
-            if (digitalRead(WIO_5S_PRESS) == LOW) clicker_state = 1;
+            if (digitalRead(clicker_button) == LOW) clicker_state = 1;
         }
         clicker_state = 0;
         clear_timer();
@@ -195,7 +206,7 @@ void page(int step_no, String title, int duration, String notes1, String notes2 
       
             progress = 200*seconds_elapsed/duration;
             tft.fillRoundRect(10, 210, progress, 10, 4, TFT_WHITE);
-            if (digitalRead(WIO_5S_PRESS) == LOW) {
+            if (digitalRead(clicker_button) == LOW) {
               clicker_state = 1;
               skipped_timer = true;
             }
@@ -221,7 +232,7 @@ void page(int step_no, String title, int duration, String notes1, String notes2 
             action_text.drawString("Timer done! Click to continue.", 0, 0);
             action_text.pushSprite(10,210);
 
-            if (digitalRead(WIO_5S_PRESS) == LOW){
+            if (digitalRead(clicker_button) == LOW){
                 clicker_state = 1;
                 delay(500);
             }
@@ -238,7 +249,7 @@ void page(int step_no, String title, int duration, String notes1, String notes2 
             action_text.setFreeFont(FSS9);
             action_text.drawString("When you're ready, click to continue.", 0, 0);
             action_text.pushSprite(10,210);
-            if (digitalRead(WIO_5S_PRESS) == LOW) {
+            if (digitalRead(clicker_button) == LOW) {
               clicker_state = 1;
               delay(500);
             }
@@ -254,8 +265,8 @@ void page(int step_no, String title, int duration, String notes1, String notes2 
 
 
 void setup() {
-      pinMode(WIO_KEY_C, INPUT_PULLUP);
-      pinMode(WIO_5S_PRESS, INPUT_PULLUP);
+      pinMode(clicker_button, INPUT_PULLUP);
+      pinMode(audio_button, INPUT_PULLUP);
       pinMode(WIO_BUZZER, OUTPUT);
   
       tft.init();
@@ -267,8 +278,10 @@ void setup() {
 void loop() {
       cover(0);
       page(1, "Prepare!", 0, "Get your favourite soup instant", "noodles and an egg.");
-      page(2, "Boil the Water!", 3, "Heat pot at medium-high heat", "until water is bubbling.");
-      page(3, "Noodles In!", 3, "Submerge all the way and", "separate slightly with chopsticks.");
-      page(4, "Enter Soup Base!", 3, "Add however much you want,", "make sure it's mixed well!");
+      page(2, "Boil the Water!", 0, "Heat pot at medium-high heat", "until water is bubbling.");
+      page(3, "Noodles In!", 120, "Submerge all the way and", "separate slightly with chopsticks.");
+      page(4, "Enter Soup Base!", 45, "Add however much you want,", "make sure it's mixed well!");
+      page(5, "Add the Egg!", 60, "Remove the pot from heat and", "cover the egg with noodles.");
+      page(6, "Say Cheese~", 0, "Add one slice of cheese", "on top of the noodles.");
       cover(1);
 }
